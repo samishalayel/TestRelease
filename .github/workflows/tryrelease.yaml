@@ -34,10 +34,6 @@ jobs:
         mkdir build
         echo testArtifact > build/artifact
 
-    - name: Create info file
-      run: |
-        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
-        > info.txt
     - name: Get current SHA
       id: vars
       working-directory: source
@@ -63,12 +59,12 @@ jobs:
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
       with:
-        path: nightly-release-artifacts
+        path: nightly-release
 
-    - name: Fixup artifacts
+    - name: Create info file
       run: |
-        mkdir nightly-release
-        mv nightly-release-artifacts/*/* nightly-release/
+        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        > info.txt
 
     - name: Create nightly release
       uses: softprops/action-gh-release@v2
@@ -79,4 +75,5 @@ jobs:
         draft: false
         prerelease: true
         files: | 
-          nightly-release/*
+          nightly-release/*/build/*
+          info.txt
