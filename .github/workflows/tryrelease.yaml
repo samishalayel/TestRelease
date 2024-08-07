@@ -35,7 +35,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         path: build/*
-        name: qmlls-${{ matrix.include.name}}.7z
+        name: qmlls-${{ matrix.name }}.7z
 
   nightly-release:
     if: ${{ ! contains(github.ref, 'tags/v') }}
