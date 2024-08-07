@@ -16,33 +16,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: ubuntu-latest
+          - name: ubuntu
             os:   ubuntu-latest
-          - name: macos-latest
+          - name: macos
             os:   macos-latest
-          - name: windows-latest
+          - name: windows
             os:   windows-latest
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        path: source
-
     - name: Create info file
       run: |
         echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
+
+    - uses: actions/checkout@v4
+      with:
+        path: source
+
+    - name: Get current SHA
+      id: vars
+      working-directory: source
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Configure and build
       run:  |
         mkdir build
         echo testArtifact > build/qmlls
 
-    - name: Get current SHA
-      id: vars
-      working-directory: source
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Collect build files
       run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z build/qmlls* info.txt
@@ -61,21 +62,27 @@ jobs:
     needs: build
 
     steps:
+    - uses: actions/checkout@v4
+      with:
+        path: source
+
+    - name: Get current SHA
+      id: vars
+      working-directory: source
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - name: Download artifacts
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
       with:
         path: nightly-release
 
-    - name: Print out cwd
-      run: ls -lR
-
     - name: Create nightly release
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: qmlls-nightly
+        tag_name: qmlls-nightly-${{ steps.vars.outputs.sha_short }}
         draft: false
         prerelease: true
         files: nightly-release/*/*.7z
