@@ -76,5 +76,5 @@ jobs:
         draft: false
         prerelease: true
         files: | 
-          nightly-release/*.7z
+          ${{ steps.downloaded_artifacts.outputs.download-path }}/*.7z
           info.txt
