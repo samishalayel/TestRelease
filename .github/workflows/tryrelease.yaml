@@ -39,11 +39,14 @@ jobs:
       working-directory: source
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+    - name: Collect build files
+      run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z build/qmlls*
+
     - name: Upload qmlls
       uses: actions/upload-artifact@v4
       with:
-        path: build/qmlls*
-        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}
+        path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z
+        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z
 
   nightly-release:
     permissions:
@@ -57,12 +60,7 @@ jobs:
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
       with:
-        path: artifacts
-
-    - name: Fixup artifacts
-      run: |
-        mkdir release
-        mv artifacts/*/* release/
+        path: nightly-release
 
     - name: Create info file
       run: |
@@ -78,5 +76,5 @@ jobs:
         draft: false
         prerelease: true
         files: | 
-          release/*
+          nightly-release/*.7z
           info.txt
