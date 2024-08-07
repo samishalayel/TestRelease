@@ -63,7 +63,12 @@ jobs:
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
       with:
-        path: nightly-release
+        path: nightly-release-artifacts
+
+    - name: Fixup artifacts
+      run: |
+        mkdir nightly-release
+        mv nightly-release-artifacts/*/* nightly-release/
 
     - name: Create nightly release
       uses: softprops/action-gh-release@v2
@@ -72,6 +77,6 @@ jobs:
       with:
         tag_name: qmlls-nightly
         draft: false
-        prerelease: false
+        prerelease: true
         files: | 
-          ${{ steps.downloaded_artifacts.outputs.download-path }}/*
+          nightly-release/*
