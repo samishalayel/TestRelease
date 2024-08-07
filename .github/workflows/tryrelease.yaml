@@ -32,7 +32,7 @@ jobs:
     - name: Configure and build
       run:  |
         mkdir build
-        echo testArtifact > build/artifact
+        echo testArtifact > build/qmlls
 
     - name: Get current SHA
       id: vars
