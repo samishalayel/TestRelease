@@ -26,7 +26,7 @@ jobs:
 
     steps:
 
-    - name: configure and build
+    - name: Configure and build
       run:  |
         mkdir build
         echo testArtifact > build/artifact
@@ -51,13 +51,19 @@ jobs:
       run: |
         echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
+    - name: Get current SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Check outputs
+        run: echo ${{ steps.vars.outputs.sha_short }}
 
-    - name: create nightly release
+    - name: Create nightly release
       id: create_release
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
+        tag: qmlls-nightly-${{ steps.vars.outputs.sha_short }}
         draft: false
         prerelease: false
         files: nightly-release/* info.txt
