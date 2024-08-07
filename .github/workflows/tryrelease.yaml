@@ -1,0 +1,63 @@
+name: Build qmlls
+
+on: push
+
+env:
+  BRANCH:     dev
+  BRANCH_REF: refs/heads/dev
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-latest
+            os:   ubuntu-latest
+          - name: macos-latest
+            os:   macos-latest
+          - name: windows-latest
+            os:   windows-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+    - name: configure and build
+      run:  |
+        mkdir build
+        echo testArtifact > build/artifact
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        path: build/*
+        name: qmlls-${{ matrix.include.name}}.7z
+
+  nightly-release:
+    if: ${{ ! contains(github.ref, 'tags/v') }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: nightly-release
+    - name: Create info file
+      run: |
+        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        > info.txt
+
+    - name: create nightly release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        draft: false
+        prerelease: false
+        files: nightly-release/* info.txt
