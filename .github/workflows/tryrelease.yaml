@@ -25,17 +25,31 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - uses: actions/checkout@v4
+      with:
+        path: source
 
     - name: Configure and build
       run:  |
         mkdir build
         echo testArtifact > build/artifact
 
+    - name: Create info file
+      run: |
+        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        > info.txt
+    - name: Get current SHA
+      id: vars
+      working-directory: source
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        path: build/*
-        name: qmlls-${{ matrix.name }}.7z
+        path: |
+          build/*
+          info.txt
+        name: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z
 
   nightly-release:
     if: ${{ ! contains(github.ref, 'tags/v') }}
@@ -47,15 +61,6 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: nightly-release
-    - name: Create info file
-      run: |
-        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
-        > info.txt
-    - name: Get current SHA
-      id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: Check outputs
-      run: echo ${{ steps.vars.outputs.sha_short }}
 
     - name: Create nightly release
       id: create_release
@@ -63,7 +68,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: qmlls-nightly-${{ steps.vars.outputs.sha_short }}
+        tag_name: qmlls-nightly
         draft: false
         prerelease: false
-        files: nightly-release/* info.txt
+        files: | 
+          nightly-release/*
+          info.txt
