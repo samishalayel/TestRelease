@@ -1,10 +1,7 @@
 name: Build qmlls
 
-on: push
-
-env:
-  BRANCH:     dev
-  BRANCH_REF: refs/heads/dev
+on:
+  push:
 
 defaults:
   run:
@@ -27,7 +24,7 @@ jobs:
     steps:
     - name: Create info file
       run: |
-        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        echo -e "commit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
         > info.txt
 
     - uses: actions/checkout@v4
@@ -44,11 +41,10 @@ jobs:
         mkdir build
         echo testArtifact > build/qmlls
 
-
-    - name: Collect build files
+    - name: Zip build files in archive
       run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z build/qmlls* info.txt
 
-    - name: Upload qmlls
+    - name: Upload archive
       uses: actions/upload-artifact@v4
       with:
         path: qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z
@@ -57,7 +53,6 @@ jobs:
   nightly-release:
     permissions:
       contents: write
-    if: ${{ ! contains(github.ref, 'tags/v') }}
     runs-on: ubuntu-latest
     needs: build
 
@@ -75,9 +70,10 @@ jobs:
       id: downloaded_artifacts
       uses: actions/download-artifact@v4
       with:
-        path: nightly-release
+        path: release
 
     - name: Create nightly release
+      if: ${{ ! contains(github.ref, 'tags/v') }}
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,4 +81,15 @@ jobs:
         tag_name: qmlls-nightly-${{ steps.vars.outputs.sha_short }}
         draft: false
         prerelease: true
-        files: nightly-release/*/*.7z
+        files: release/*/*.7z
+
+    - name: Create release
+      if: ${{ contains(github.ref, 'tags/qmlls-') && !contains(github.ref, 'nightly') }}
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: qmlls-${{ steps.vars.outputs.sha_short }}
+        draft: true
+        prerelease: false
+        files: release/*/*.7z
