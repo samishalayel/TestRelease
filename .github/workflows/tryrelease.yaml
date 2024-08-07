@@ -78,4 +78,4 @@ jobs:
         tag_name: qmlls-nightly
         draft: false
         prerelease: true
-        files: nightly-release/*.7z
+        files: nightly-release/*/*.7z
