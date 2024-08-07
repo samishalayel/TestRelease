@@ -29,6 +29,11 @@ jobs:
       with:
         path: source
 
+    - name: Create info file
+      run: |
+        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
+        > info.txt
+
     - name: Configure and build
       run:  |
         mkdir build
@@ -40,7 +45,7 @@ jobs:
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Collect build files
-      run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z build/qmlls*
+      run: 7z a qmlls-${{ matrix.name }}-${{ steps.vars.outputs.sha_short }}.7z build/qmlls* info.txt
 
     - name: Upload qmlls
       uses: actions/upload-artifact@v4
@@ -62,10 +67,8 @@ jobs:
       with:
         path: nightly-release
 
-    - name: Create info file
-      run: |
-        echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" \
-        > info.txt
+    - name: Print out cwd
+      run: ls -lR
 
     - name: Create nightly release
       uses: softprops/action-gh-release@v2
@@ -75,6 +78,4 @@ jobs:
         tag_name: qmlls-nightly
         draft: false
         prerelease: true
-        files: | 
-          ${{ steps.downloaded_artifacts.outputs.download-path }}/*.7z
-          info.txt
+        files: nightly-release/*.7z
